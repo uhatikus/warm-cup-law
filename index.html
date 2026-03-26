@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rate of Change = -k × Difference</title>
+<style>
+  :root{
+    --bg1:#07111f;
+    --bg2:#0f172a;
+    --card:#111827;
+    --line:#334155;
+    --text:#e5eefc;
+    --muted:#93a4c3;
+    --red:#ef4444;
+    --blue:#3b82f6;
+    --purple:#8b5cf6;
+    --softred:#fecaca;
+    --softblue:#bfdbfe;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: Arial, Helvetica, sans-serif;
+    color:var(--text);
+    background: radial-gradient(circle at top left, #10213d 0%, var(--bg1) 35%, var(--bg2) 100%);
+  }
+  .wrap{
+    max-width:1200px;
+    margin:0 auto;
+    padding:28px;
+  }
+  h1{
+    margin:0 0 8px;
+    font-size:34px;
+  }
+  .subtitle{
+    color:var(--muted);
+    line-height:1.5;
+    margin-bottom:22px;
+    max-width:1000px;
+  }
+  .equation{
+    background:linear-gradient(90deg, rgba(59,130,246,.12), rgba(239,68,68,.12));
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px 20px;
+    font-size:28px;
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+  .card{
+    background:rgba(17,24,39,.9);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+  }
+  h2,h3{margin-top:0}
+  .slider-group{margin-bottom:18px}
+  .label-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:7px;
+    font-weight:bold;
+  }
+  input[type=range]{width:100%}
+  .value{
+    color:#fff;
+    min-width:52px;
+    text-align:right;
+  }
+  .helper{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.35;
+    margin-top:5px;
+  }
+  .top-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  button{
+    border:none;
+    padding:10px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:bold;
+    color:white;
+    background:#1f2937;
+    border:1px solid var(--line);
+  }
+  button:hover{filter:brightness(1.08)}
+  .btn-blue{background:rgba(59,130,246,.22)}
+  .btn-red{background:rgba(239,68,68,.22)}
+  .mini{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    margin-top:8px;
+  }
+  .stat{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:rgba(255,255,255,.02);
+  }
+  .k{
+    color:var(--muted);
+    font-size:12px;
+    margin-bottom:4px;
+  }
+  .v{
+    font-size:24px;
+    font-weight:bold;
+  }
+  .status{
+    margin-top:16px;
+    padding:14px;
+    border-radius:14px;
+    line-height:1.45;
+    font-weight:bold;
+    border:1px solid var(--line);
+  }
+  .status.blue{
+    background:rgba(59,130,246,.12);
+    color:var(--softblue);
+  }
+  .status.red{
+    background:rgba(239,68,68,.12);
+    color:var(--softred);
+  }
+  .status.purple{
+    background:rgba(139,92,246,.12);
+    color:#ddd6fe;
+  }
+  .viz{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-bottom:18px;
+  }
+  .person-box{
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    min-height:150px;
+    position:relative;
+    overflow:hidden;
+  }
+  .person-box::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.15;
+    pointer-events:none;
+  }
+  .person-box.blue::before{
+    background:linear-gradient(135deg, var(--blue), transparent 60%);
+  }
+  .person-box.red::before{
+    background:linear-gradient(135deg, var(--red), transparent 60%);
+  }
+  .avatar{
+    width:58px;height:58px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;font-weight:bold;margin-bottom:12px;
+    border:1px solid rgba(255,255,255,.15);
+  }
+  .avatar.blue{background:rgba(59,130,246,.18)}
+  .avatar.red{background:rgba(239,68,68,.18)}
+  .thermo{
+    height:16px;border-radius:999px;background:#0b1220;overflow:hidden;border:1px solid var(--line);
+    margin-top:10px;
+  }
+  .fill-blue,.fill-red{
+    height:100%;
+    transition:width .15s linear;
+  }
+  .fill-blue{background:linear-gradient(90deg, #1d4ed8, #60a5fa)}
+  .fill-red{background:linear-gradient(90deg, #dc2626, #f87171)}
+  .chart-card{margin-bottom:18px}
+  canvas{
+    width:100%;
+    height:320px;
+    display:block;
+    border-radius:16px;
+    background:#0b1220;
+    border:1px solid var(--line);
+  }
+  .legend{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.4}
+  ul{margin:8px 0 0 18px;padding:0}
+  li{margin:7px 0}
+  .foot{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:12px;
+  }
+  @media (max-width:950px){
+    .grid{grid-template-columns:1fr}
+    .viz{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Flux = − coefficient × gradient</h1>
+    <div class="subtitle">
+      Think of holding a warm cup of coffee: heat flows from the hotter object to the colder hand.
+      The same mathematical shape appears in Fourier’s law, Fick’s law, Ohm’s law, Darcy’s law, and more:
+      <strong>the bigger the difference, the faster the change</strong>.
+      Here we turn that into a human analogy: <strong>your state tends to move toward the people around you</strong>.
+    </div>
+
+    <div class="equation">
+      Rate of your change = − k × (you − environment)
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Controls</h2>
+
+        <div class="top-buttons">
+          <button class="btn-red" id="presetCoffee">Warm cup → cold hands</button>
+          <button class="btn-blue" id="presetPeople">Person → people</button>
+        </div>
+
+        <div class="slider-group">
+          <div class="label-row">
+            <span>Your initial state</span>
+            <span class="value" id="youVal">20</span>
+          </div>
+          <input type="range" id="you" min="0" max="100" step="1" value="20">
+          <div class="helper">For coffee: your hand temperature feeling. For people: your mood / habit / energy / belief level.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="label-row">
+            <span>Environment state</span>
+            <span class="value" id="envVal">80</span>
+          </div>
+          <input type="range" id="env" min="0" max="100" step="1" value="80">
+          <div class="helper">For coffee: cup temperature. For people: the average state of those around you.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="label-row">
+            <span>Coefficient k</span>
+            <span class="value" id="kVal">0.18</span>
+          </div>
+          <input type="range" id="k" min="0.01" max="0.5" step="0.01" value="0.18">
+          <div class="helper">How strongly you are affected. Bigger k = faster convergence.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="label-row">
+            <span>Time horizon</span>
+            <span class="value" id="timeVal">25</span>
+          </div>
+          <input type="range" id="time" min="5" max="60" step="1" value="25">
+          <div class="helper">How long we watch the process unfold.</div>
+        </div>
+
+        <div class="mini">
+          <div class="stat">
+            <div class="k">Initial difference</div>
+            <div class="v" id="diff0">60</div>
+          </div>
+          <div class="stat">
+            <div class="k">Initial rate</div>
+            <div class="v" id="rate0">10.8</div>
+          </div>
+          <div class="stat">
+            <div class="k">Final you</div>
+            <div class="v" id="finalYou">71.3</div>
+          </div>
+          <div class="stat">
+            <div class="k">Final gap</div>
+            <div class="v" id="finalGap">8.7</div>
+          </div>
+        </div>
+
+        <div class="status purple" id="status">
+          Large difference + strong coupling means fast change at the beginning.
+        </div>
+
+        <div class="foot">
+          Wiggle the sliders and watch how the curves change. The line always bends toward reducing the gap.
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Visual intuition</h2>
+          <div class="viz">
+            <div class="person-box blue">
+              <div class="avatar blue">Y</div>
+              <div><strong>You</strong></div>
+              <div id="youText" class="helper">Starting lower than the environment.</div>
+              <div class="thermo"><div class="fill-blue" id="youBar" style="width:20%"></div></div>
+            </div>
+            <div class="person-box red">
+              <div class="avatar red">E</div>
+              <div><strong>Environment</strong></div>
+              <div id="envText" class="helper">The surrounding average stays fixed in this simplified model.</div>
+              <div class="thermo"><div class="fill-red" id="envBar" style="width:80%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <h3>1) Change over time</h3>
+          <canvas id="stateChart" width="760" height="320"></canvas>
+          <div class="legend">
+            <span style="color:#60a5fa;">Blue line</span> = your state over time.
+            <span style="color:#f87171;">Red line</span> = environment state.
+            The blue line moves toward the red one.
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <h3>2) Difference and rate</h3>
+          <canvas id="gapChart" width="760" height="320"></canvas>
+          <div class="legend">
+            <span style="color:#c084fc;">Purple line</span> = remaining difference.
+            <span style="color:#f59e0b;">Orange line</span> = speed of change.
+            Bigger initial gap means faster change, but both decay over time.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>What can we learn from it about people?</h3>
+          <div id="learn"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function $(id){ return document.getElementById(id); }
+function fmt(x, d=1){ return Number(x).toFixed(d); }
+
+function simulate(you0, env, k, T, dt=0.1){
+  const pts = [];
+  let y = you0;
+  for(let t=0; t<=T+1e-9; t+=dt){
+    const diff = y - env;
+    const rate = -k * diff;
+    pts.push({t, y, env, diff, rate});
+    y = y + rate * dt;
+  }
+  return pts;
+}
+
+function drawAxes(ctx, w, h, pad, maxX, maxY, minY, xLabel, yLabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = "#475569";
+  ctx.lineWidth = 1;
+
+  function mapX(x){ return pad + (x/maxX)*(w-2*pad); }
+  function mapY(y){ return h-pad - ((y-minY)/(maxY-minY))*(h-2*pad); }
+
+  ctx.strokeStyle = "#1e293b";
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "12px Arial";
+
+  for(let i=0;i<=5;i++){
+    const y = minY + (i/5)*(maxY-minY);
+    const py = mapY(y);
+    ctx.beginPath();
+    ctx.moveTo(pad, py);
+    ctx.lineTo(w-pad, py);
+    ctx.stroke();
+    ctx.fillText(fmt(y,0), 8, py+4);
+  }
+
+  for(let i=0;i<=5;i++){
+    const x = (i/5)*maxX;
+    const px = mapX(x);
+    ctx.beginPath();
+    ctx.moveTo(px, pad);
+    ctx.lineTo(px, h-pad);
+    ctx.stroke();
+    ctx.fillText(fmt(x,0), px-5, h-pad+18);
+  }
+
+  ctx.strokeStyle = "#64748b";
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h-pad);
+  ctx.lineTo(w-pad, h-pad);
+  ctx.stroke();
+
+  ctx.fillStyle = "#cbd5e1";
+  ctx.fillText(xLabel, w/2-18, h-10);
+  ctx.save();
+  ctx.translate(16, h/2+20);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+
+  return {mapX, mapY};
+}
+
+function drawStateChart(pts){
+  const c = $("stateChart");
+  const ctx = c.getContext("2d");
+  const w = c.width, h = c.height, pad = 45;
+  const maxX = pts[pts.length-1].t;
+  const vals = pts.flatMap(p => [p.y, p.env]);
+  const minY = Math.min(...vals, 0) - 5;
+  const maxY = Math.max(...vals, 100) + 5;
+  const {mapX, mapY} = drawAxes(ctx, w, h, pad, maxX, maxY, minY, "time", "state");
+
+  ctx.beginPath();
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = "#ef4444";
+  pts.forEach((p,i)=>{
+    const x = mapX(p.t), y = mapY(p.env);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#3b82f6";
+  pts.forEach((p,i)=>{
+    const x = mapX(p.t), y = mapY(p.y);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  const p0 = pts[0], pN = pts[pts.length-1];
+  const dots = [
+    {t:0, val:p0.y, color:"#3b82f6"},
+    {t:pN.t, val:pN.y, color:"#93c5fd"},
+    {t:0, val:p0.env, color:"#ef4444"}
+  ];
+  dots.forEach(d=>{
+    ctx.beginPath();
+    ctx.fillStyle = d.color;
+    ctx.arc(mapX(d.t), mapY(d.val), 5, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function drawGapChart(pts){
+  const c = $("gapChart");
+  const ctx = c.getContext("2d");
+  const w = c.width, h = c.height, pad = 45;
+  const maxX = pts[pts.length-1].t;
+  const vals = pts.flatMap(p => [Math.abs(p.diff), Math.abs(p.rate)]);
+  const minY = 0;
+  const maxY = Math.max(...vals, 1) * 1.2;
+  const {mapX, mapY} = drawAxes(ctx, w, h, pad, maxX, maxY, minY, "time", "magnitude");
+
+  ctx.beginPath();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#a855f7";
+  pts.forEach((p,i)=>{
+    const x = mapX(p.t), y = mapY(Math.abs(p.diff));
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = "#f59e0b";
+  pts.forEach((p,i)=>{
+    const x = mapX(p.t), y = mapY(Math.abs(p.rate));
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+function update(){
+  const you0 = parseFloat($("you").value);
+  const env  = parseFloat($("env").value);
+  const k    = parseFloat($("k").value);
+  const T    = parseFloat($("time").value);
+
+  $("youVal").textContent = fmt(you0,0);
+  $("envVal").textContent = fmt(env,0);
+  $("kVal").textContent = fmt(k,2);
+  $("timeVal").textContent = fmt(T,0);
+
+  $("youBar").style.width = you0 + "%";
+  $("envBar").style.width = env + "%";
+
+  const pts = simulate(you0, env, k, T, 0.1);
+  const p0 = pts[0], pN = pts[pts.length - 1];
+
+  $("diff0").textContent = fmt(Math.abs(p0.diff),1);
+  $("rate0").textContent = fmt(Math.abs(p0.rate),1);
+  $("finalYou").textContent = fmt(pN.y,1);
+  $("finalGap").textContent = fmt(Math.abs(pN.diff),1);
+
+  drawStateChart(pts);
+  drawGapChart(pts);
+
+  const direction = env > you0 ? "upward toward the people / source around you" :
+                    env < you0 ? "downward toward the people / source around you" :
+                    "nowhere, because there is no difference to erase";
+
+  let statusClass = "purple";
+  let statusText = `Your state will move ${direction}.`;
+  if (Math.abs(p0.diff) > 45 && k > 0.25) {
+    statusClass = "red";
+    statusText = "Very strong effect: big difference and strong coupling create a fast early change.";
+  } else if (Math.abs(p0.diff) < 12 || k < 0.08) {
+    statusClass = "blue";
+    statusText = "Weak effect: either the gap is already small or the coupling is weak, so change is slow.";
+  }
+  $("status").className = "status " + statusClass;
+  $("status").textContent = statusText;
+
+  let bullets = "<ul>";
+  bullets += `<li><strong>Core idea:</strong> the bigger the difference between you and your environment, the faster you change at first.</li>`;
+  bullets += `<li><strong>The minus sign matters:</strong> it means the direction of change always tends to reduce the gap, not increase it.</li>`;
+  bullets += `<li><strong>Right now:</strong> your initial gap is <strong>${fmt(Math.abs(p0.diff),1)}</strong>, so your initial rate of change is <strong>${fmt(Math.abs(p0.rate),1)}</strong>.</li>`;
+
+  if (env > you0) {
+    bullets += `<li><strong>Human reading:</strong> when the people around you are “warmer” on some dimension — more motivated, more disciplined, more calm, more ambitious — you tend to drift upward toward them.</li>`;
+  } else if (env < you0) {
+    bullets += `<li><strong>Human reading:</strong> when the surrounding average is lower than you, you may slowly cool down, relax, or regress toward it unless something keeps you distinct.</li>`;
+  } else {
+    bullets += `<li><strong>Human reading:</strong> if you already match the environment, there is no driving force for further change in this simplified model.</li>`;
+  }
+
+  bullets += `<li><strong>Coffee version:</strong> warm coffee heats your hands because the temperature difference drives a heat flux from hot to cold.</li>`;
+  bullets += `<li><strong>People version:</strong> habits, moods, norms, and expectations can spread similarly — not because people are particles, but because the same “difference drives flow” pattern appears.</li>`;
+  bullets += `<li><strong>Leadership lesson:</strong> if you want change, changing the surrounding environment can be more effective than pushing the individual directly.</li>`;
+  bullets += `<li><strong>Important caveat:</strong> real humans are more complex than this equation. People also resist, choose, reflect, and sometimes push back against the environment.</li>`;
+  bullets += "</ul>";
+
+  $("learn").innerHTML = bullets;
+
+  $("youText").textContent =
+    env > you0
+    ? "You start below the environment, so the flow pulls you upward."
+    : env < you0
+    ? "You start above the environment, so the flow pulls you downward."
+    : "You already match the environment, so there is no gradient.";
+
+  $("envText").textContent =
+    "In this simplified model, the environment stays fixed and acts like the surrounding temperature / average norm.";
+}
+
+["you","env","k","time"].forEach(id => $(id).addEventListener("input", update));
+
+$("presetCoffee").addEventListener("click", () => {
+  $("you").value = 20;
+  $("env").value = 85;
+  $("k").value = 0.22;
+  $("time").value = 20;
+  update();
+});
+$("presetPeople").addEventListener("click", () => {
+  $("you").value = 30;
+  $("env").value = 70;
+  $("k").value = 0.12;
+  $("time").value = 35;
+  update();
+});
+
+update();
+</script>
+</body>
+</html>
